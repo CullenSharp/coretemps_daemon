@@ -1,13 +1,13 @@
-use coretemps_daemon::collect_sensor_readings;
-use serde_json::to_writer;
-use std::eprintln;
-use std::io::Error;
-use std::io::Write;
-use std::matches;
+mod sensor_readings;
+
+use std::io::{self, Error, Write};
 use std::os::unix::net::{UnixListener, UnixStream};
+use std::path::Path;
 use std::thread::sleep;
 use std::time::Duration;
-use std::{env, fs, io, path::Path};
+use std::{env, fs, matches};
+
+use serde_json::to_writer;
 
 fn main() {
     if let Err(err) = run() {
@@ -18,14 +18,15 @@ fn main() {
 
 // send data until failure or client disconnect
 fn handle_client(mut stream: UnixStream) -> io::Result<()> {
+    println!("Handling client...");
     loop {
-        let sensor_readings = collect_sensor_readings()?;
+        let sensor_readings = sensor_readings::collect()?;
 
         to_writer(&stream, &sensor_readings)?;
         stream.write_all(b"\n")?;
 
         // sleep 100ms
-        sleep(Duration::from_millis(100));
+        sleep(Duration::from_millis(1000));
     }
 }
 
@@ -40,7 +41,6 @@ fn is_disconnect(error: &Error) -> bool {
 }
 
 fn run() -> io::Result<()> {
-    // TODO: add a process lock
     let runtime_dir = Path::new(&env::var("XDG_RUNTIME_DIR").unwrap()).to_path_buf();
     let socket = runtime_dir.join("coretempd/coretempd.sock");
     if let Some(parent) = socket.parent() {
@@ -63,6 +63,8 @@ fn run() -> io::Result<()> {
                 continue;
             }
         };
+
+        println!("Connected: {stream:?}");
 
         if let Err(error) = handle_client(stream)
             && !is_disconnect(&error)
