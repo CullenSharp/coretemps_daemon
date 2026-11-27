@@ -12,11 +12,11 @@ const HWMON_PATH: &str = "/sys/class/hwmon/";
 #[derive(Serialize, Deserialize, Debug)]
 #[allow(dead_code)]
 pub struct SensorReading {
-    nr: u32,                    // channel number
-    label: Option<String>,      // coreN
-    critical_temp: Option<f64>, // deg C
-    current_temp: Option<f64>,  // deg C
-    max_temp: Option<f64>,      // deg C
+    pub nr: u32,                    // channel number
+    pub label: Option<String>,      // coreN
+    pub critical_temp: Option<f64>, // deg C
+    pub current_temp: Option<f64>,  // deg C
+    pub max_temp: Option<f64>,      // deg C
 }
 
 impl fmt::Display for SensorReading {
